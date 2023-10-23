@@ -45,3 +45,57 @@ class OtchetProverki:
     def mozhno_deployt(self):
         # деплой разрешён только если нет FAIL
         return not self.est_oshibki()
+
+# Модуль проверки портов — убеждаемся что нужные сервисы доступны
+# Проверяем перед деплоем чтобы не было сюрпризов на проде
+
+import socket
+
+# стандартные порты которые должны быть открыты
+STANDARTNYE_PORTY = {
+    80: "HTTP",
+    443: "HTTPS",
+    5432: "PostgreSQL",
+    6379: "Redis",
+    8080: "App server"
+}
+
+
+class ProverkaPortov:
+    def __init__(self, host="localhost", timeout=3):
+        self.host = host
+        self.timeout = timeout  # секунд ждём ответа
+
+    def proverit_port(self, port):
+        # пробуем подключиться к порту
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(self.timeout)
+            rezultat = sock.connect_ex((self.host, port))
+            sock.close()
+
+            if rezultat == 0:
+                return ResultatProverki(
+                    nazvanie=f"Порт {port}",
+                    status=STATUS_OK,
+                    soobshenie=f"{STANDARTNYE_PORTY.get(port, 'сервис')} доступен",
+                    znachenie=port
+                )
+            else:
+                return ResultatProverki(
+                    nazvanie=f"Порт {port}",
+                    status=STATUS_FAIL,
+                    soobshenie=f"{STANDARTNYE_PORTY.get(port, 'сервис')} недоступен",
+                    znachenie=port
+                )
+        except socket.error as e:
+            return ResultatProverki(
+                nazvanie=f"Порт {port}",
+                status=STATUS_FAIL,
+                soobshenie=f"Ошибка подключения: {e}",
+                znachenie=port
+            )
+
+    def proverit_vse(self, porty):
+        # проверяем список портов и возвращаем результаты
+        return [self.proverit_port(p) for p in porty]
