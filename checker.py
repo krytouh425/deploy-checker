@@ -153,3 +153,53 @@ class ProverkaDiska:
                 status=STATUS_FAIL,
                 soobshenie=f"Не удалось проверить диск: {e}"
             )
+# Модуль проверки процессов — убеждаемся что нужные сервисы запущены
+# Если база или кэш не работают — деплой бессмысленен
+
+import subprocess
+import sys
+
+
+class ProverkaProtsessov:
+    def __init__(self):
+        self.os_windows = sys.platform == "win32"
+
+    def poluchit_protsessy(self):
+        # получаем список запущенных процессов
+        try:
+            if self.os_windows:
+                rezultat = subprocess.run(
+                    ["tasklist"],
+                    capture_output=True,
+                    text=True
+                )
+            else:
+                rezultat = subprocess.run(
+                    ["ps", "aux"],
+                    capture_output=True,
+                    text=True
+                )
+            return rezultat.stdout.lower()
+        except Exception as e:
+            return ""
+
+    def proverit_protsess(self, nazvanie, klyuchevoe_slovo):
+        # ищем процесс по ключевому слову
+        protsessy = self.poluchit_protsessy()
+
+        if klyuchevoe_slovo.lower() in protsessy:
+            return ResultatProverki(
+                nazvanie=nazvanie,
+                status=STATUS_OK,
+                soobshenie=f"{nazvanie} запущен"
+            )
+        else:
+            return ResultatProverki(
+                nazvanie=nazvanie,
+                status=STATUS_WARN,
+                soobshenie=f"{nazvanie} не обнаружен в списке процессов"
+            )
+
+    def proverit_vse(self, protsessy):
+        # protsessy — список кортежей (название, ключевое_слово)
+        return [self.proverit_protsess(n, k) for n, k in protsessy]
