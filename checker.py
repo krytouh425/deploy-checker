@@ -99,3 +99,57 @@ class ProverkaPortov:
     def proverit_vse(self, porty):
         # проверяем список портов и возвращаем результаты
         return [self.proverit_port(p) for p in porty]
+
+# Модуль проверки диска — контролируем свободное место перед деплоем
+# Деплой с заполненным диском может уронить сервер
+
+import shutil
+
+# пороговые значения свободного места в процентах
+POROG_WARN = 20   # предупреждение если меньше 20%
+POROG_FAIL = 10   # ошибка если меньше 10%
+
+
+class ProverkaDiska:
+    def __init__(self, put="/"):
+        self.put = put  # раздел который проверяем
+
+    def poluchit_info(self):
+        # получаем статистику диска
+        stat = shutil.disk_usage(self.put)
+        svobodno_procent = (stat.free / stat.total) * 100
+        svobodno_gb = stat.free / (1024 ** 3)
+        vsego_gb = stat.total / (1024 ** 3)
+        return svobodno_procent, svobodno_gb, vsego_gb
+
+    def proverit(self):
+        try:
+            procent, svobodno, vsego = self.poluchit_info()
+
+            soobshenie = (
+                f"Свободно {svobodno:.1f} ГБ из {vsego:.1f} ГБ "
+                f"({procent:.1f}%)"
+            )
+
+            if procent < POROG_FAIL:
+                status = STATUS_FAIL
+                soobshenie += " — критически мало места!"
+            elif procent < POROG_WARN:
+                status = STATUS_WARN
+                soobshenie += " — рекомендуем очистить диск"
+            else:
+                status = STATUS_OK
+
+            return ResultatProverki(
+                nazvanie="Диск",
+                status=status,
+                soobshenie=soobshenie,
+                znachenie=round(procent, 1)
+            )
+
+        except Exception as e:
+            return ResultatProverki(
+                nazvanie="Диск",
+                status=STATUS_FAIL,
+                soobshenie=f"Не удалось проверить диск: {e}"
+            )
