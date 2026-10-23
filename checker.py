@@ -203,3 +203,66 @@ class ProverkaProtsessov:
     def proverit_vse(self, protsessy):
         # protsessy — список кортежей (название, ключевое_слово)
         return [self.proverit_protsess(n, k) for n, k in protsessy]
+
+# Точка входа — запускаем все проверки и выводим итоговый отчёт
+# Если есть FAIL — деплой блокируется
+
+import sys
+
+
+def zapustit_proverki(host="localhost"):
+    otchet = OtchetProverki(host)
+
+    print(f"\n{'=' * 50}")
+    print(f"  ПРОВЕРКА СЕРВЕРА ПЕРЕД ДЕПЛОЕМ: {host}")
+    print(f"{'=' * 50}\n")
+
+    # проверка портов
+    checker_portov = ProverkaPortov(host)
+    porty = [80, 443, 5432, 6379]
+    for rezultat in checker_portov.proverit_vse(porty):
+        otchet.dobavit(rezultat)
+        print(rezultat)
+
+    # проверка диска
+    checker_diska = ProverkaDiska()
+    rezultat_diska = checker_diska.proverit()
+    otchet.dobavit(rezultat_diska)
+    print(rezultat_diska)
+
+    # проверка процессов
+    checker_protsessov = ProverkaProtsessov()
+    protsessy = [
+        ("PostgreSQL", "postgres"),
+        ("Redis", "redis"),
+        ("Nginx", "nginx")
+    ]
+    for rezultat in checker_protsessov.proverit_vse(protsessy):
+        otchet.dobavit(rezultat)
+        print(rezultat)
+
+    # итоговый отчёт
+    oshibki = [r for r in otchet.rezultaty if r.est_problema()]
+    preduprezhdeniya = [r for r in otchet.rezultaty if r.est_preduprezhdenie()]
+
+    print(f"\n{'=' * 50}")
+    print(f"  ИТОГ")
+    print(f"{'=' * 50}")
+    print(f"  Проверок выполнено:   {len(otchet.rezultaty)}")
+    print(f"  Ошибок (FAIL):        {len(oshibki)}")
+    print(f"  Предупреждений (WARN): {len(preduprezhdeniya)}")
+
+    if otchet.mozhno_deployt():
+        print("\n  ✓ ДЕПЛОЙ РАЗРЕШЁН")
+    else:
+        print("\n  ✗ ДЕПЛОЙ ЗАБЛОКИРОВАН — устраните ошибки")
+        for o in oshibki:
+            print(f"    → {o.nazvanie}: {o.soobshenie}")
+
+    print(f"{'=' * 50}\n")
+
+
+if __name__ == "__main__":
+    host = sys.argv[1] if len(sys.argv) > 1 else "localhost"
+    zapustit_proverki(host)
+
