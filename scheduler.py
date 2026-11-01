@@ -37,8 +37,12 @@ class PlanirovshhikProverok:
             print("История проверок пуста")
             return
 
+        uspeshno = len([z for z in self.istoriya if z["uspeshno"]])
+        neuspeshno = len(self.istoriya) - uspeshno
+
         print(f"\n{'=' * 45}")
         print(f"  ИСТОРИЯ ПРОВЕРОК ({len(self.istoriya)} запусков)")
+        print(f"  Успешно: {uspeshno} | Ошибок: {neuspeshno}")
         print(f"{'=' * 45}")
         for zapis in self.istoriya[-10:]:  # последние 10
             status = "✓" if zapis["uspeshno"] else "✗"
