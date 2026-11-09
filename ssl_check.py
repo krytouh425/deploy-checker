@@ -8,6 +8,7 @@ from datetime import datetime
 
 PREDUPREZHDENIE_DNEY = 30  # предупреждение если до истечения меньше 30 дней
 KRITICHESKIY_DNEY = 7      # критично если меньше 7 дней
+TIMEOUT_PODKLYUCHENIYA = 5  # секунд ждём подключения
 
 
 class ProverkaSSL:
