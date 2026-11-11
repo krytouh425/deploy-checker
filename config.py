@@ -3,7 +3,7 @@
 
 # настройки подключения
 DEFAULT_HOST = "localhost"
-CONNECTION_TIMEOUT = 10  # секунд ждём ответа от порта
+CONNECTION_TIMEOUT = 15  # секунд ждём ответа от порта
 
 # порты которые проверяем перед деплоем
 PORTY_DLYA_PROVERKI = {
