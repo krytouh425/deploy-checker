@@ -45,7 +45,23 @@ class LoggerProverok:
 
     def prochitat_poslednie(self, kolichestvo=20):
         if not os.path.exists(self.filepath):
+            print("Лог файл ещё не создан")
             return []
+
         with open(self.filepath, encoding="utf-8") as f:
             stroki = f.readlines()
-        return [s.strip() for s in stroki[-kolichestvo:]]
+
+        if not stroki:
+            print("Лог файл пустой")
+            return []
+
+        rezultat = [s.strip() for s in stroki[-kolichestvo:]]
+
+        # считаем статистику
+        oshibki = len([s for s in rezultat if "[ERROR]" in s])
+        preduprezhdeniya = len([s for s in rezultat if "[WARN]" in s])
+
+        print(f"\nПоследние {len(rezultat)} записей:")
+        print(f"Ошибок: {oshibki} | Предупреждений: {preduprezhdeniya}\n")
+
+        return rezultat
